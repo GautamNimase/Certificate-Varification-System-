@@ -1,0 +1,9 @@
+node_modules/
+server/uploads/
+blockchain/artifacts/
+blockchain/cache/
+client/dist/
+*.swp
+*.tmp
+.env
+*.log
