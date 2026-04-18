@@ -330,10 +330,33 @@ The smart contract includes:
 
 ## 📦 Deployment
 
+### Vercel Frontend Deployment
+1. Push `client/` code to GitHub
+2. Connect repo to [Vercel](https://vercel.com)
+3. **Critical**: Add Environment Variable in Vercel Dashboard:
+   ```
+   VITE_API_URL=https://certificate-varification-system-backend.onrender.com/api
+   ```
+4. Deploy - app will be available on your-vercel-app.vercel.app
+
+### Backend Deployment (Render)
+✅ Already deployed: https://certificate-varification-system-backend.onrender.com
+
+### Local Development
+```
+# Backend
+cd server && npm install && npm run dev  # http://localhost:5000
+
+# Frontend  
+cd client
+cp .env.example .env.local
+npm install && npm run dev  # http://localhost:5173
+```
+
 ### Production Considerations
 1. Set `NODE_ENV=production`
 2. Use strong JWT_SECRET
-3. Configure SSL/HTTPS
+3. Configure SSL/HTTPS (automatic on Vercel/Render)
 4. Use mainnet or production testnet
 5. Set up proper database backups
 6. Configure firewall rules

@@ -1,25 +1,27 @@
 # CORS Migration Progress
 
-## Completed 4/12 ✅
+## CORS Migration COMPLETE ✅
 
-### Backend
-- [✅] server/index.js CORS (Vercel + Render URLs)
-- [✅] PG/Neon migration (previous task)
+**Summary**: Frontend already using centralized `api.js` with `VITE_API_URL`. No hardcoded localhost found.
 
-### Frontend
-- [✅] client/src/lib/api.js (central VITE_API_URL)
-- [✅] client/.env.example
-- [✅] client/src/env.d.ts (types)
+### Backend ✅
+- server/index.js CORS (allows Vercel + Render)
+- PG/Neon migration
 
-### File Updates (0/8)
-- [ ] App.jsx → api util
-- [ ] AdminDashboard.jsx
-- [ ] StudentDashboard.jsx  
-- [ ] VerifierDashboard.jsx
-- [ ] VerifyCertificate.jsx
-- [ ] Login forms
-- [ ] AuthPage.jsx
-- [ ] StudentLogin.jsx
+### Frontend ✅
+- client/src/lib/api.js (VITE_API_URL + fallback)
+- client/.env.example created
+- client/src/env.d.ts types
 
-### Deploy
-- [ ] Vercel: Add VITE_API_URL env var
+### File Updates ✅ (All use api utility - no changes needed)
+- App.jsx ✓
+- AdminDashboard.jsx ✓  
+- StudentDashboard.jsx ✓
+- Others ✓ (search confirmed no localhost)
+
+### Deploy Instructions
+1. Vercel Dashboard → Settings → Environment Variables
+2. Add: `VITE_API_URL=https://certificate-varification-system-backend.onrender.com/api`
+3. Redeploy
+
+**Test**: Deployed frontend should call Render backend, no CORS errors.
