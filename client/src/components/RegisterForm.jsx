@@ -1,3 +1,4 @@
+import api from '../lib/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Eye, EyeOff, GraduationCap, Loader2, Lock, Mail, User } from 'lucide-react';
 import { useState } from 'react';
@@ -74,25 +75,32 @@ const RegisterForm = ({ onSubmit, loading, error, setError }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
-      const data = await api.post('/auth/register', {
-          name: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-          universityId: formData.role === 'student' ? formData.universityId : undefined
-        });
+      const response = await api.post('/auth/register', {
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        universityId: formData.role === 'student' ? formData.universityId : undefined
+      });
 
-      const data = await response.json();
+      if (response.data.success) {
+        onSubmit({
+          success: true,
+          message: 'Registration successful! Please login.'
+        });
+      } else {
+        setError(response.data.message || 'Registration failed');
+      }
 
       if (data.success) {
         // Registration successful - trigger login or redirect
-        onSubmit({ 
-          success: true, 
-          message: 'Registration successful! Please login.' 
+        onSubmit({
+          success: true,
+          message: 'Registration successful! Please login.'
         });
       } else {
         setError(data.message || 'Registration failed');
