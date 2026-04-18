@@ -159,7 +159,7 @@ exports.issueCertificate = async (req, res) => {
                     certificateName: certificate.certificate_name,
                     issuerName: certificate.issuer_name,
                     blockchainTx: certificate.blockchain_tx,
-                    createdAt: certificate.created_at
+                    createdAt: certificate.createdAt
                 },
                 verificationLink,
                 qrCode: qrCodeDataURL,
@@ -383,7 +383,7 @@ exports.verifyCertificate = async (req, res) => {
                     email: certificate.student.email
                 } : null,
                 issuerName: certificate.issuer_name,
-                issueDate: certificate.created_at,
+                issueDate: certificate.createdAt,
                 revoked: certificate.revoked,
                 revokedAt: certificate.revoked_at
             } : null,
@@ -448,16 +448,10 @@ exports.getCertificate = async (req, res) => {
         });
     }
 };
-
-/**
- * Get all certificates for a student
- * GET /api/certificate/student/:studentId
- */
 exports.getStudentCertificates = async (req, res) => {
     try {
         const { studentId } = req.params;
 
-        // Verify the requesting user is either admin or the student themselves
         if (req.user.role !== 'admin' && req.user.id !== parseInt(studentId)) {
             return res.status(403).json({
                 success: false,
@@ -474,10 +468,9 @@ exports.getStudentCertificates = async (req, res) => {
                     attributes: ['id', 'name', 'email']
                 }
             ],
-            order: [['created_at', 'DESC']]
+            order: [['createdAt', 'DESC']]
         });
 
-        // Add verification links to each certificate
         const certificatesWithLinks = await Promise.all(
             certificates.map(async (cert) => {
                 const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify?hash=${cert.certificate_hash}`;
@@ -485,6 +478,7 @@ exports.getStudentCertificates = async (req, res) => {
                 
                 return {
                     ...cert.toJSON(),
+                    created_at: cert.createdAt, // ✅ IMPORTANT FIX
                     verificationLink,
                     qrCode: qrCodeDataURL
                 };
@@ -495,6 +489,7 @@ exports.getStudentCertificates = async (req, res) => {
             success: true,
             data: certificatesWithLinks
         });
+
     } catch (error) {
         console.error('Get Student Certificates Error:', error.message);
         res.status(500).json({
@@ -512,7 +507,7 @@ exports.getStudentCertificates = async (req, res) => {
 exports.getAllCertificates = async (req, res) => {
     try {
         const { page = 1, limit = 10, revoked } = req.query;
-        
+
         const whereClause = {};
         if (revoked !== undefined) {
             whereClause.revoked = revoked === 'true';
@@ -529,14 +524,19 @@ exports.getAllCertificates = async (req, res) => {
                     attributes: ['id', 'name', 'email']
                 }
             ],
-            order: [['created_at', 'DESC']],
+            order: [['createdAt', 'DESC']], // ✅ FIXED
             limit: parseInt(limit),
             offset: parseInt(offset)
         });
 
+        const formattedCertificates = certificates.map(cert => ({
+            ...cert.toJSON(),
+            created_at: cert.createdAt // ✅ FIXED
+        }));
+
         res.json({
             success: true,
-            data: certificates,
+            data: formattedCertificates,
             pagination: {
                 total: count,
                 page: parseInt(page),
@@ -544,6 +544,7 @@ exports.getAllCertificates = async (req, res) => {
                 pages: Math.ceil(count / limit)
             }
         });
+
     } catch (error) {
         console.error('Get All Certificates Error:', error.message);
         res.status(500).json({

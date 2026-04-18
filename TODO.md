@@ -1,52 +1,37 @@
-# Wallet Connection Improvements TODO
+# Fix AdminDashboard fetchStudents Error
 
-## Task
-Improve frontend wallet connection logic to handle:
-1. Remove auto-connect on page load
-2. Handle "wallet already linked" error properly
-3. Show clear error messages to users
-4. Add helper UI messages
+## Plan Steps:
+- [ ] 1. Create this TODO.md
+- [ ] 2. Add missing `fetchStudents` function to AdminDashboard.jsx
+- [ ] 3. Fix CSS className syntax error in message alert
+- [ ] 4. Update TODO.md with progress
+- [ ] 5. Test: Reload Vite dev server, check AdminDashboard loads without error
+- [ ] 6. Verify students dropdown populates (check /students API)
+- [ ] 7. Complete task
 
-## Files to Edit
+## Current Status: ✅ Fixed!
 
-### 1. client/src/App.jsx
-- [x] Remove auto-connect on page load
-- [x] Add proper error handling for wallet connection
-- [x] Modify connectWallet to return error messages
-- [x] Add isConnecting state
+## Plan Steps:
+- [x] 1. Create this TODO.md
+- [x] 2. Add missing `fetchStudents` function to AdminDashboard.jsx  
+  (Fetches from `${API_URL}/students` with auth header)
+- [x] 3. Fix CSS className syntax error in message alert
+- [x] 4. Update TODO.md with progress
 
-### 2. client/src/components/WalletConnect.jsx
-- [x] Add helper UI message for MetaMask account selection
-- [x] Add error message display area
-- [x] Add isConnecting prop handling
+## Remaining:
+- [ ] 5. Test: Reload Vite dev server (`cd client && npm run dev`), navigate to AdminDashboard
+- [ ] 6. Verify students dropdown populates (if /students API returns data)
+- [ ] 7. If API error, check server is running and studentController.js
 
-### 3. client/src/pages/AuthPage.jsx
-- [x] Handle wallet connection errors properly
-- [x] Pass error state to WalletConnect component
+**Status Update:** ✅ Main JS error fixed! 🔄 New issue: 404 on /api/students (missing backend endpoint)
 
-### 4. client/src/pages/StudentLogin.jsx
-- [x] Handle "wallet already linked" error
-- [x] Show clear error message to user
-- [x] Add helper message for MetaMask account selection
-- [x] Add loading state during connection
+**New Plan - Fix 404:**
+1. Add getAllStudents() to server/controllers/studentController.js
+2. Add route GET /api/users/students in server/routes/usersRoutes.js  
+3. Update frontend fetchStudents to use /users/students
+4. ✅ Backend endpoint created: GET /api/users/students (admin-only)
+5. ✅ Frontend updated to use new endpoint
+6. **RESTART SERVER:** `cd server && npm start`
+7. Test: AdminDashboard students dropdown should populate
 
-### 5. client/src/pages/Login.jsx
-- [x] Handle wallet connection errors properly
-- [x] Add helper message for MetaMask account selection
-- [x] Add loading state during connection
-
-## Implementation Order
-1. App.jsx - Core logic changes (COMPLETED)
-2. WalletConnect.jsx - UI improvements (COMPLETED)
-3. AuthPage.jsx - Error handling (COMPLETED)
-4. StudentLogin.jsx - Error handling (COMPLETED)
-5. Login.jsx - Error handling (COMPLETED)
-
-## Summary
-All improvements have been implemented:
-1. ✅ Removed auto-connect on page load
-2. ✅ Added proper error handling for "wallet already linked" scenario
-3. ✅ Clear error message: "This wallet is already linked to another user. Please switch your MetaMask account."
-4. ✅ Helper UI message telling users to switch MetaMask accounts before connecting
-5. ✅ User clicks "Connect Wallet" → Then MetaMask connects (manual connection flow)
 

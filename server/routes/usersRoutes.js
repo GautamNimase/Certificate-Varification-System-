@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const authController = require('../controllers/authController');
+const adminController = require('../controllers/adminController');
 
 /**
  * Connect wallet address for logged-in user
@@ -25,6 +26,12 @@ const authController = require('../controllers/authController');
  * }
  */
 router.post('/connect-wallet', authenticate, authController.connectWallet);
+
+/**
+ * Get all students (Admin only)
+ * GET /api/users/students
+ */
+router.get('/students', authenticate, adminController.getAllStudents);
 
 module.exports = router;
 

@@ -4,16 +4,16 @@ import { AuthContext } from '../App';
 // Helper function to format date in DD MMM YYYY format
 const formatDate = (dateValue) => {
   // Handle null/undefined
-  if (!dateValue) return 'N/A';
-  
+  if (!dateValue || dateValue === 0 || dateValue === '0') return 'N/A';
+
   let date;
-  
+
   // If it's a number, treat as Unix timestamp (seconds or milliseconds)
   if (typeof dateValue === 'number') {
     // Check if it's seconds (10 digits) or milliseconds (13 digits)
     const timestamp = dateValue < 10000000000 ? dateValue * 1000 : dateValue;
     date = new Date(timestamp);
-  } 
+  }
   // If it's a string
   else if (typeof dateValue === 'string') {
     // Try parsing as number first
@@ -30,16 +30,16 @@ const formatDate = (dateValue) => {
   else if (dateValue instanceof Date) {
     date = dateValue;
   }
-  
+
   // Check if date is valid
   if (!date || isNaN(date.getTime())) return 'N/A';
-  
+
   // Format as DD MMM YYYY
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const day = date.getDate();
   const month = months[date.getMonth()];
   const year = date.getFullYear();
-  
+
   return `${day} ${month} ${year}`;
 };
 
@@ -79,7 +79,7 @@ const QRScanner = ({ onScan, onClose }) => {
     setScanning(true);
     const scanner = new Html5QrcodeScanner(
       "qr-reader",
-      { 
+      {
         fps: 10,
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0
@@ -127,7 +127,7 @@ const QRScanner = ({ onScan, onClose }) => {
             </svg>
           </button>
         </div>
-        
+
         <div id="qr-reader" className="w-full rounded-lg overflow-hidden"></div>
 
         {error && (
@@ -209,10 +209,9 @@ const VerificationResultCard = ({ result, onClose }) => {
         <div className="flex items-center space-x-4">
           {getStatusIcon()}
           <div>
-            <h3 className={`text-xl font-bold ${
-              result.result === 'VALID' ? 'text-green-700' : 
+            <h3 className={`text-xl font-bold ${result.result === 'VALID' ? 'text-green-700' :
               result.result === 'REVOKED' ? 'text-red-700' : 'text-gray-700'
-            }`}>
+              }`}>
               {getStatusText()}
             </h3>
             <p className="text-sm text-gray-600 mt-1">{result.message}</p>
@@ -244,7 +243,13 @@ const VerificationResultCard = ({ result, onClose }) => {
             <div>
               <span className="text-gray-500 block">Issue Date</span>
               <span className="font-medium">
-                {formatDate(result.certificate.issueDate)}
+                {
+                  formatDate(
+                    result.certificate.issueDate ||
+                    result.certificate.created_at ||
+                    result.certificate.createdAt
+                  )
+                }
               </span>
             </div>
             <div className="md:col-span-2">
@@ -273,7 +278,7 @@ const VerificationResultCard = ({ result, onClose }) => {
             {result.certificate.blockchainTxHash && (
               <div className="md:col-span-2">
                 <span className="text-gray-500 block">Blockchain Transaction</span>
-                <a 
+                <a
                   href={`https://sepolia.etherscan.io/tx/${result.certificate.blockchainTxHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -286,7 +291,7 @@ const VerificationResultCard = ({ result, onClose }) => {
             {/* Check for valid CID and show button - handles both camelCase and snake_case */}
             {result.result === 'VALID' && isValidIPFSCID(result.certificate.ipfsCID || result.certificate.ipfs_cid) && (
               <div className="md:col-span-2 mt-2">
-                <a 
+                <a
                   href={getIPFSUrl(result.certificate.ipfsCID || result.certificate.ipfs_cid)}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -348,11 +353,10 @@ const HistoryTable = ({ history }) => {
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  log.verification_result === 'VALID' ? 'bg-green-100 text-green-800' :
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${log.verification_result === 'VALID' ? 'bg-green-100 text-green-800' :
                   log.verification_result === 'REVOKED' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                    'bg-gray-100 text-gray-800'
+                  }`}>
                   {log.verification_result}
                 </span>
               </td>
@@ -376,7 +380,7 @@ const HistoryTable = ({ history }) => {
 // Main Verifier Dashboard Component
 function VerifierDashboard() {
   const { user, logout, getToken, API_URL } = useContext(AuthContext);
-  
+
   const [certificateHash, setCertificateHash] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
@@ -400,7 +404,7 @@ function VerifierDashboard() {
   const fetchStats = async () => {
     try {
       const response = await fetch(`${API_URL}/verifier/stats`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json'
         }
@@ -417,7 +421,7 @@ function VerifierDashboard() {
   const fetchHistory = async () => {
     try {
       const response = await fetch(`${API_URL}/verifier/history?limit=50`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json'
         }
@@ -459,7 +463,7 @@ function VerifierDashboard() {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setVerificationResult(data);
         fetchStats();
@@ -476,7 +480,7 @@ function VerifierDashboard() {
 
   const handleVerifyByFile = async (e) => {
     e.preventDefault();
-    
+
     if (!selectedFile) {
       setError('Please select a certificate file');
       return;
@@ -499,7 +503,7 @@ function VerifierDashboard() {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setVerificationResult(data);
         fetchStats();
@@ -565,7 +569,7 @@ function VerifierDashboard() {
               </div>
             </div>
           </Card>
-          
+
           <Card>
             <div className="flex items-center">
               <div className="p-3 bg-green-100 rounded-lg">
@@ -614,21 +618,19 @@ function VerifierDashboard() {
           <nav className="-mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('verify')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'verify'
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'verify'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               Verify Certificate
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'history'
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'history'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
             >
               Verification History
             </button>
@@ -641,7 +643,7 @@ function VerifierDashboard() {
             {/* Verification Form */}
             <Card>
               <h2 className="text-xl font-bold mb-6">Certificate Verification</h2>
-              
+
               {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
                   {error}
@@ -661,8 +663,8 @@ function VerifierDashboard() {
                     placeholder="Enter hash or verification link"
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
-                  <Button 
-                    onClick={() => handleVerifyByHash()} 
+                  <Button
+                    onClick={() => handleVerifyByHash()}
                     disabled={loading}
                   >
                     Verify
@@ -717,8 +719,8 @@ function VerifierDashboard() {
                     </label>
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={!selectedFile || loading}
                     className="w-full"
                   >
@@ -729,7 +731,7 @@ function VerifierDashboard() {
 
               {/* QR Code Verification */}
               <div className="border-t pt-6">
-                <Button 
+                <Button
                   onClick={() => setShowQRScanner(true)}
                   variant="secondary"
                   className="w-full"
@@ -752,9 +754,9 @@ function VerifierDashboard() {
                   </div>
                 </Card>
               ) : verificationResult ? (
-                <VerificationResultCard 
-                  result={verificationResult} 
-                  onClose={() => setVerificationResult(null)} 
+                <VerificationResultCard
+                  result={verificationResult}
+                  onClose={() => setVerificationResult(null)}
                 />
               ) : (
                 <Card>
@@ -785,9 +787,9 @@ function VerifierDashboard() {
 
         {/* QR Scanner Modal */}
         {showQRScanner && (
-          <QRScanner 
-            onScan={handleQRScan} 
-            onClose={() => setShowQRScanner(false)} 
+          <QRScanner
+            onScan={handleQRScan}
+            onClose={() => setShowQRScanner(false)}
           />
         )}
       </main>

@@ -57,7 +57,7 @@ exports.verifyByHash = async (req, res) => {
         let verifierId = null;
         let verifierInfo = null;
         let verifierType = null;
-        
+
         if (req.user) {
             // Check if it's a verifier (from verifiers table)
             const verifier = await Verifier.findByPk(req.user.id);
@@ -108,8 +108,9 @@ exports.verifyByHash = async (req, res) => {
                 } : null,
                 issuerName: certificate.issuer_name,
                 issuerWallet: certificate.issuer_wallet_address,
-                issueDate: certificate.created_at,
-                revoked: certificate.revoked,
+                issueDate: certificate.createdAt && new Date(certificate.createdAt).getTime() > 0
+                    ? certificate.createdAt
+                    : null, revoked: certificate.revoked,
                 revokedAt: certificate.revoked_at,
                 blockchainTxHash: certificate.blockchain_tx_hash
             } : null,
@@ -183,7 +184,7 @@ exports.verifyByUpload = async (req, res) => {
         // Determine verifier ID and type
         let verifierId = null;
         let verifierType = null;
-        
+
         if (req.user) {
             // Check if it's a verifier (from verifiers table)
             const verifier = await Verifier.findByPk(req.user.id);
@@ -226,8 +227,8 @@ exports.verifyByUpload = async (req, res) => {
                 } : null,
                 issuerName: certificate.issuer_name,
                 issuerWallet: certificate.issuer_wallet_address,
-                issueDate: certificate.created_at,
-                revoked: certificate.revoked,
+                issueDate: certificate.createdAt?.toISOString(), 
+                    revoked: certificate.revoked,
                 revokedAt: certificate.revoked_at,
                 blockchainTxHash: certificate.blockchain_tx_hash
             } : null,
@@ -336,7 +337,9 @@ exports.getPublicVerification = async (req, res) => {
                     name: certificate.student.name
                 } : null,
                 issuerName: certificate.issuer_name,
-                issueDate: certificate.created_at,
+                issueDate: certificate.createdAt && new Date(certificate.createdAt).getTime() > 0
+                    ? certificate.createdAt
+                    : null,
                 revoked: certificate.revoked
             } : null,
             blockchain: blockchainResult

@@ -40,7 +40,7 @@ const isValidIPFSCID = (cid) => {
 
 function StudentDashboard() {
   const { user, logout, getToken, API_URL, walletAddress, connectWallet, isMetaMaskInstalled } = useContext(AuthContext);
-  
+
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCert, setSelectedCert] = useState(null);
@@ -56,7 +56,7 @@ function StudentDashboard() {
   const fetchCertificates = async () => {
     try {
       const response = await fetch(`${API_URL}/student/certificates`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json'
         }
@@ -77,7 +77,7 @@ function StudentDashboard() {
       // Encode the certificate hash to handle special characters
       const encodedHash = encodeURIComponent(certHash);
       const response = await fetch(`${API_URL}/student/certificate/${encodedHash}`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json'
         }
@@ -103,11 +103,11 @@ function StudentDashboard() {
       // Encode the certificate hash to handle special characters
       const encodedHash = encodeURIComponent(certificate.certificate_hash);
       const response = await fetch(`${API_URL}/student/download/${encodedHash}`, {
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${getToken()}`
         }
       });
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -183,7 +183,7 @@ function StudentDashboard() {
               </div>
             </div>
           </Card>
-          
+
           <Card>
             <div className="flex items-center">
               <div className="p-3 bg-green-100 rounded-lg">
@@ -215,7 +215,7 @@ function StudentDashboard() {
 
         <Card>
           <h2 className="text-xl font-bold mb-6">Your Certificates</h2>
-          
+
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -241,8 +241,8 @@ function StudentDashboard() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {certificates.map((cert) => (
-                    <tr 
-                      key={cert.id} 
+                    <tr
+                      key={cert.id}
                       className={`hover:bg-gray-50 ${cert.revoked ? 'bg-red-50' : ''}`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -255,29 +255,31 @@ function StudentDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
                           {/* Handle blockchain timestamps (in seconds) - convert to milliseconds */}
-                          {cert.created_at > 9999999999 
-                            ? new Date(parseInt(cert.created_at) * 1000).toLocaleDateString()
-                            : new Date(cert.created_at).toLocaleDateString()
-                          }
+                          {(cert.created_at || cert.createdAt)
+                            ? (
+                              (cert.created_at || cert.createdAt) > 9999999999
+                                ? new Date(parseInt(cert.created_at || cert.createdAt) * 1000).toLocaleDateString()
+                                : new Date(cert.created_at || cert.createdAt).toLocaleDateString()
+                            )
+                            : 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          cert.revoked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${cert.revoked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                          }`}>
                           {cert.revoked ? 'Revoked' : 'Valid'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <Button 
+                          <Button
                             onClick={() => fetchCertificateDetails(cert.certificate_hash)}
                             variant="secondary"
                             className="text-xs px-3 py-1"
                           >
                             Details
                           </Button>
-                          <Button 
+                          <Button
                             onClick={() => handleDownload(cert)}
                             variant="secondary"
                             disabled={downloading}
@@ -285,7 +287,7 @@ function StudentDashboard() {
                           >
                             {downloading ? 'Downloading...' : 'Download'}
                           </Button>
-                          <Button 
+                          <Button
                             onClick={() => copyVerificationLink(cert.verificationLink)}
                             className="text-xs px-3 py-1"
                           >
@@ -344,9 +346,8 @@ function StudentDashboard() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Status</p>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      selectedCert.revoked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${selectedCert.revoked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                      }`}>
                       {selectedCert.revoked ? 'Revoked' : 'Valid'}
                     </span>
                   </div>
@@ -358,10 +359,13 @@ function StudentDashboard() {
                     <p className="text-sm text-gray-500">Issue Date</p>
                     <p className="font-medium">
                       {/* Handle both seconds (blockchain) and milliseconds (database) timestamps */}
-                      {selectedCert.created_at > 9999999999 
-                        ? new Date(parseInt(selectedCert.created_at) * 1000).toLocaleDateString()
-                        : new Date(selectedCert.created_at).toLocaleDateString()
-                      }
+                      {(selectedCert.created_at || selectedCert.createdAt)
+                        ? (
+                          (selectedCert.created_at || selectedCert.createdAt) > 9999999999
+                            ? new Date(parseInt(selectedCert.created_at || selectedCert.createdAt) * 1000).toLocaleDateString()
+                            : new Date(selectedCert.created_at || selectedCert.createdAt).toLocaleDateString()
+                        )
+                        : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -379,7 +383,7 @@ function StudentDashboard() {
                 {/* View Certificate on IPFS button */}
                 {selectedCert.ipfs_cid && isValidIPFSCID(selectedCert.ipfs_cid) && (
                   <div>
-                    <a 
+                    <a
                       href={getIPFSUrl(selectedCert.ipfs_cid)}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -397,9 +401,9 @@ function StudentDashboard() {
                 {selectedCert.blockchain_tx_hash && (
                   <div>
                     <p className="text-sm text-gray-500">Blockchain Transaction</p>
-                    <a 
-                      href={getExplorerUrl(selectedCert.blockchain_tx_hash)} 
-                      target="_blank" 
+                    <a
+                      href={getExplorerUrl(selectedCert.blockchain_tx_hash)}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="font-mono text-xs bg-gray-100 p-2 rounded break-all text-primary-600 hover:underline"
                     >
@@ -429,11 +433,10 @@ function StudentDashboard() {
                       <div key={log.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="text-sm font-medium">
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              log.result === 'VALID' ? 'bg-green-100 text-green-800' : 
-                              log.result === 'REVOKED' ? 'bg-red-100 text-red-800' : 
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span className={`px-2 py-1 rounded text-xs ${log.result === 'VALID' ? 'bg-green-100 text-green-800' :
+                                log.result === 'REVOKED' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                              }`}>
                               {log.result}
                             </span>
                           </p>
