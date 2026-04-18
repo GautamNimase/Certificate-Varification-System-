@@ -379,8 +379,9 @@ const HistoryTable = ({ history }) => {
 
 // Main Verifier Dashboard Component
 function VerifierDashboard() {
-  const { user, logout, getToken, API_URL } = useContext(AuthContext);
-
+  const { user, logout, getToken } = useContext(AuthContext);
+  const API_URL = import.meta.env.VITE_API_URL;
+  
   const [certificateHash, setCertificateHash] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
