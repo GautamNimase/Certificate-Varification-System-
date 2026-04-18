@@ -44,16 +44,20 @@ function AdminDashboard() {
     fetchCertificates();
   }, []);
 
-  const fetchStudents = async () => {
-    try {
-      const data = await api.get('/users/students', getToken());
-      if (data.success) {
-        setStudents(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching students:", error);
+const fetchStudents = async () => {
+  console.log("Fetching students...");  // 👈 add this
+
+  try {
+    const data = await api.get('/users/students', getToken());
+    console.log("Students API response:", data); // 👈 add this
+
+    if (data.success) {
+      setStudents(data.data);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching students:", error);
+  }
+};
 
   const fetchCertificates = async () => {
     try {
