@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../App';
 
 const Card = ({ children, className = "" }) => (
   <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>{children}</div>

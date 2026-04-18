@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../App';
 
 // Reusable components
 const Card = ({ children, className = "" }) => (
