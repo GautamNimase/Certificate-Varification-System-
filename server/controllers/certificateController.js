@@ -4,11 +4,11 @@ const fs = require('fs');
 const QRCode = require('qrcode');
 const { Certificate, User, VerificationLog } = require('../models');
 const { uploadToIPFS, uploadJSONToIPFS } = require('../services/ipfsService');
-const { 
-    issueCertificate, 
-    verifyCertificate, 
+const {
+    issueCertificate,
+    verifyCertificate,
     revokeCertificate,
-    generateCertificateHash 
+    generateCertificateHash
 } = require('../services/blockchainService');
 
 /**
@@ -19,7 +19,7 @@ const {
 exports.issueCertificate = async (req, res) => {
     try {
         const { studentId, certificateName, certificateDescription } = req.body;
-        
+
         // Check if file was uploaded
         if (!req.file) {
             return res.status(400).json({
@@ -86,7 +86,7 @@ exports.issueCertificate = async (req, res) => {
 
         // Get student wallet address - validate it exists
         const studentWalletAddress = student.wallet_address;
-        
+
         // Validate student has connected their wallet
         if (!studentWalletAddress) {
             return res.status(400).json({
@@ -143,7 +143,7 @@ exports.issueCertificate = async (req, res) => {
         });
 
         // Generate QR code for verification link
-        const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify?hash=${certificateHash}`;
+        const verificationLink = `${process.env.CLIENT_URL}/verify?hash=${certificateHash}`;
         const qrCodeDataURL = await QRCode.toDataURL(verificationLink);
 
         res.status(201).json({
@@ -168,7 +168,7 @@ exports.issueCertificate = async (req, res) => {
         });
     } catch (error) {
         console.error('Issue Certificate Error:', error.message);
-        
+
         // Clean up uploaded file if there was an error
         if (req.file && req.file.path) {
             try {
@@ -204,7 +204,7 @@ exports.revokeCertificate = async (req, res) => {
 
         // Find certificate
         const certificate = await Certificate.findByPk(certificateId);
-        
+
         if (!certificate) {
             return res.status(404).json({
                 success: false,
@@ -225,7 +225,7 @@ exports.revokeCertificate = async (req, res) => {
             certificate.revoked = true;
             certificate.revoked_at = new Date();
             await certificate.save();
-            
+
             return res.json({
                 success: true,
                 message: 'Certificate revoked locally (was never issued on blockchain)',
@@ -247,13 +247,13 @@ exports.revokeCertificate = async (req, res) => {
             blockchainResult = await revokeCertificate(certificate.certificate_hash);
         } catch (blockchainError) {
             console.error('Blockchain revocation failed:', blockchainError.message);
-            
+
             // If certificate doesn't exist on blockchain, still allow local revocation
             if (blockchainError.message.includes('Certificate does not exist')) {
                 certificate.revoked = true;
                 certificate.revoked_at = new Date();
                 await certificate.save();
-                
+
                 return res.json({
                     success: true,
                     message: 'Certificate revoked locally (not found on blockchain)',
@@ -268,7 +268,7 @@ exports.revokeCertificate = async (req, res) => {
                     }
                 });
             }
-            
+
             blockchainResult = {
                 success: false,
                 message: 'Blockchain revocation failed: ' + blockchainError.message
@@ -313,7 +313,7 @@ exports.verifyCertificate = async (req, res) => {
         if (req.file) {
             const fileBuffer = fs.readFileSync(req.file.path);
             certificateHash = generateCertificateHash(fileBuffer);
-            
+
             // Clean up uploaded file
             try {
                 fs.unlinkSync(req.file.path);
@@ -428,7 +428,7 @@ exports.getCertificate = async (req, res) => {
         }
 
         // Generate verification link and QR code
-        const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify?hash=${certificate.certificate_hash}`;
+        const verificationLink = `${process.env.CLIENT_URL}/verify?hash=${certificate.certificate_hash}`;
         const qrCodeDataURL = await QRCode.toDataURL(verificationLink);
 
         res.json({
@@ -473,9 +473,9 @@ exports.getStudentCertificates = async (req, res) => {
 
         const certificatesWithLinks = await Promise.all(
             certificates.map(async (cert) => {
-                const verificationLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify?hash=${cert.certificate_hash}`;
+                const verificationLink = `${process.env.CLIENT_URL}/verify?hash=${cert.certificate_hash}`;
                 const qrCodeDataURL = await QRCode.toDataURL(verificationLink);
-                
+
                 return {
                     ...cert.toJSON(),
                     created_at: cert.createdAt, // ✅ IMPORTANT FIX
