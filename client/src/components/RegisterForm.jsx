@@ -73,42 +73,36 @@ const RegisterForm = ({ onSubmit, loading, error, setError }) => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateForm()) return;
+  if (!validateForm()) return;
 
-    try {
-      const response = await api.post('/auth/register', {
-        name: formData.fullName,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        universityId: formData.role === 'student' ? formData.universityId : undefined
+  try {
+    const response = await api.post('/auth/register', {
+      name: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+      universityId:
+        formData.role === 'student' ? formData.universityId : undefined
+    });
+
+    // ✅ FIXED
+    if (response.success) {
+      onSubmit({
+        success: true,
+        message: 'Registration successful! Please login.'
       });
-
-      if (response.data.success) {
-        onSubmit({
-          success: true,
-          message: 'Registration successful! Please login.'
-        });
-      } else {
-        setError(response.data.message || 'Registration failed');
-      }
-
-      if (data.success) {
-        // Registration successful - trigger login or redirect
-        onSubmit({
-          success: true,
-          message: 'Registration successful! Please login.'
-        });
-      } else {
-        setError(data.message || 'Registration failed');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    } else {
+      setError(response.message || 'Registration failed');
     }
-  };
+
+  } catch (err) {
+    console.error("REGISTER ERROR:", err);
+    setError('Network or server error. Please try again.');
+  }
+};
 
   // Show error alert
   const displayError = error || validationError;
