@@ -333,10 +333,11 @@ The smart contract includes:
 ### Vercel Frontend Deployment
 1. Push `client/` code to GitHub
 2. Connect repo to [Vercel](https://vercel.com)
-3. **Critical**: Add Environment Variable in Vercel Dashboard:
+3. **Optional**: Add Environment Variable (api.js now prod-safe):
    ```
    VITE_API_URL=https://certificate-varification-system-backend.onrender.com/api
    ```
+   Console log shows active URL.
 4. Deploy - app will be available on your-vercel-app.vercel.app
 
 ### Backend Deployment (Render)

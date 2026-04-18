@@ -1,5 +1,9 @@
 // client/src/lib/api.js - Centralized API utility
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const isProd = import.meta.env.PROD;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (isProd ? 'https://certificate-varification-system-backend.onrender.com/api' : 'http://localhost:5000/api');
+
+console.log('[API] Using base URL:', API_BASE_URL);
 
 export const api = {
   get: async (endpoint) => {
