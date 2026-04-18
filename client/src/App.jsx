@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { createContext, useEffect, useState } from 'react';
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import api from './lib/api.js';
 
 // Import pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -13,9 +14,6 @@ import VerifyCertificate from './pages/VerifyCertificate';
 
 // Create Auth Context
 export const AuthContext = createContext(null);
-
-// API Base URL
-const API_URL = 'http://localhost:5000/api';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -112,17 +110,7 @@ function App() {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          // Use the connect-wallet endpoint
-          const response = await fetch(`${API_URL}/users/connect-wallet`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ walletAddress: address }),
-          });
-          
-          const data = await response.json();
+          const data = await api.post('/users/connect-wallet', { walletAddress: address }, token);
           if (data.success) {
             // Update user in localStorage with new wallet address
             const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -169,16 +157,7 @@ function App() {
   // Login function
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
+      const data = await api.post('/auth/login', { email, password });
       if (data.success) {
         localStorage.setItem('token', data.data.token);
         localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -227,7 +206,7 @@ function App() {
       isConnecting,
       disconnectWallet,
       getToken,
-      API_URL
+      api  // Pass api util instead of API_URL
     }}>
       <Router>
         <Routes>
@@ -264,4 +243,3 @@ function App() {
 }
 
 export default App;
-

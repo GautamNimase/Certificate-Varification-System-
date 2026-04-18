@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { AuthContext } from '../App';
+import { AuthContext } from '../../App';
 
 // Reusable components
 const Card = ({ children, className = "" }) => (
@@ -24,7 +24,7 @@ const Button = ({ children, onClick, variant = "primary", disabled = false, clas
 };
 
 function AdminDashboard() {
-  const { user, logout, getToken, API_URL, walletAddress, connectWallet } = useContext(AuthContext);
+  const { user, logout, getToken, api, walletAddress, connectWallet } = useContext(AuthContext);
   
   const [activeTab, setActiveTab] = useState('issue');
   const [students, setStudents] = useState([]);
@@ -39,19 +39,14 @@ function AdminDashboard() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
 
-useEffect(() => {
+  useEffect(() => {
     fetchStudents();
     fetchCertificates();
   }, []);
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch(`${API_URL}/users/students`, {
-        headers: { Authorization: `Bearer ${getToken()}` }
-      });
-
-      const data = await response.json();
-
+      const data = await api.get('/users/students', getToken());
       if (data.success) {
         setStudents(data.data);
       }
@@ -60,36 +55,20 @@ useEffect(() => {
     }
   };
 
-const fetchCertificates = async () => {
-  try {
-    const response = await fetch(`${API_URL}/certificate/all`, {
-      headers: { Authorization: `Bearer ${getToken()}` }
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      const formattedData = data.data.map(cert => {
-        console.log("DEBUG cert:", {
-          created_at: cert.created_at,
-          type: typeof cert.created_at,
-          raw: String(cert.created_at)
-        });
-
-        return {
+  const fetchCertificates = async () => {
+    try {
+      const data = await api.get('/certificate/all', getToken());
+      if (data.success) {
+        const formattedData = data.data.map(cert => ({
           ...cert,
           createdAt: cert.created_at
-        };
-      });
-
-      console.log("Raw certificates data:", formattedData);
-
-      setCertificates(formattedData);
+        }));
+        setCertificates(formattedData);
+      }
+    } catch (error) {
+      console.error("Error fetching certificates:", error);
     }
-  } catch (error) {
-    console.error("Error fetching certificates:", error);
-  }
-};
+  };
 
   const handleIssueCertificate = async (e) => {
     e.preventDefault();
@@ -109,13 +88,7 @@ const fetchCertificates = async () => {
     formData.append('certificateDescription', certificateDescription);
 
     try {
-      const response = await fetch(`${API_URL}/certificate/issue`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-        body: formData
-      });
-      
-      const data = await response.json();
+      const data = await api.upload('/certificate/issue', formData, getToken());
       
       if (data.success) {
         setMessage({ type: 'success', text: 'Certificate issued successfully!' });
@@ -140,16 +113,7 @@ const fetchCertificates = async () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/certificate/revoke`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`
-        },
-        body: JSON.stringify({ certificateId })
-      });
-      
-      const data = await response.json();
+      const data = await api.post('/certificate/revoke', { certificateId }, getToken());
       
       if (data.success) {
         setMessage({ type: 'success', text: 'Certificate revoked successfully!' });
@@ -204,7 +168,7 @@ const fetchCertificates = async () => {
         )}
 
         {/* Message Alert */}
-{message.text && (
+        {message.text && (
           <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
             {message.text}
           </div>
@@ -297,112 +261,107 @@ const fetchCertificates = async () => {
         )}
 
         {/* View Certificates Tab */}
-{activeTab === 'view' && (
-  <div className="space-y-6">
-    <Card>
-      <h2 className="text-xl font-bold mb-4">All Issued Certificates</h2>
+        {activeTab === 'view' && (
+          <div className="space-y-6">
+            <Card>
+              <h2 className="text-xl font-bold mb-4">All Issued Certificates</h2>
 
-      {certificates.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">
-          No certificates issued yet
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Certificate
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Issued Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
+              {certificates.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No certificates issued yet
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Certificate
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Student
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Issued Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
 
-            <tbody className="divide-y divide-gray-200">
-              {certificates.map(cert => (
-                <tr key={cert.id} className="hover:bg-gray-50">
-                  
-                  {/* Certificate */}
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-gray-900">
-                      {cert.certificate_name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {cert.certificate_hash?.substring(0, 20)}...
-                    </p>
-                  </td>
+                    <tbody className="divide-y divide-gray-200">
+                      {certificates.map(cert => (
+                        <tr key={cert.id} className="hover:bg-gray-50">
+                          
+                          {/* Certificate */}
+                          <td className="px-6 py-4">
+                            <p className="font-medium text-gray-900">
+                              {cert.certificate_name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {cert.certificate_hash?.substring(0, 20)}...
+                            </p>
+                          </td>
 
-                  {/* Student */}
-                  <td className="px-6 py-4">
-                    <p className="text-gray-900">
-                      {cert.student?.name || 'N/A'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {cert.student?.email || 'N/A'}
-                    </p>
-                  </td>
+                          {/* Student */}
+                          <td className="px-6 py-4">
+                            <p className="text-gray-900">
+                              {cert.student?.name || 'N/A'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {cert.student?.email || 'N/A'}
+                            </p>
+                          </td>
 
-                  {/* Issued Date */}
-                  <td className="px-6 py-4 text-gray-500">
-                    {cert.created_at
-                      ? (
-                          cert.created_at > 9999999999
-                            ? new Date(parseInt(cert.created_at) * 1000).toLocaleDateString()
-                            : new Date(cert.created_at).toLocaleDateString()
-                        )
-                      : 'N/A'}
-                  </td>
+                          {/* Issued Date */}
+                          <td className="px-6 py-4 text-gray-500">
+                            {cert.createdAt
+                              ? new Date(cert.createdAt).toLocaleDateString()
+                              : 'N/A'}
+                          </td>
 
-                  {/* Status ✅ FIXED */}
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        cert.revoked
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-green-100 text-green-700'
-                      }`}
-                    >
-                      {cert.revoked ? 'Revoked' : 'Valid'}
-                    </span>
-                  </td>
+                          {/* Status */}
+                          <td className="px-6 py-4">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                cert.revoked
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-green-100 text-green-700'
+                              }`}
+                            >
+                              {cert.revoked ? 'Revoked' : 'Valid'}
+                            </span>
+                          </td>
 
-                  {/* Actions */}
-                  <td className="px-6 py-4">
-                    {!cert.revoked && (
-                      <Button
-                        onClick={() => handleRevokeCertificate(cert.id)}
-                        variant="danger"
-                        className="text-sm"
-                      >
-                        Revoke
-                      </Button>
-                    )}
-                  </td>
+                          {/* Actions */}
+                          <td className="px-6 py-4">
+                            {!cert.revoked && (
+                              <Button
+                                onClick={() => handleRevokeCertificate(cert.id)}
+                                variant="danger"
+                                className="text-sm"
+                              >
+                                Revoke
+                              </Button>
+                            )}
+                          </td>
 
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Card>
-  </div>
-)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
       </main>
     </div>
   );
 }
 
 export default AdminDashboard;
-

@@ -1,5 +1,8 @@
 import { useContext, useEffect, useState } from 'react';
-import { AuthContext } from '../App';
+import { useSearchParams } from 'react-router-dom';
+import QRCode from 'qrcode';
+import { AuthContext } from '../../App';
+import api from '../../lib/api.js';
 
 const Card = ({ children, className = "" }) => (
   <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>{children}</div>
@@ -39,12 +42,11 @@ const isValidIPFSCID = (cid) => {
 };
 
 function StudentDashboard() {
-  const { user, logout, getToken, API_URL, walletAddress, connectWallet, isMetaMaskInstalled } = useContext(AuthContext);
+  const { user, logout, getToken, api, walletAddress, connectWallet, isMetaMaskInstalled } = useContext(AuthContext);
 
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCert, setSelectedCert] = useState(null);
-  const [showQR, setShowQR] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [verificationHistory, setVerificationHistory] = useState([]);
   const [downloading, setDownloading] = useState(false);
@@ -55,13 +57,7 @@ function StudentDashboard() {
 
   const fetchCertificates = async () => {
     try {
-      const response = await fetch(`${API_URL}/student/certificates`, {
-        headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
+      const data = await api.get('/student/certificates', getToken());
       if (data.success) {
         setCertificates(data.data);
       }
@@ -74,15 +70,8 @@ function StudentDashboard() {
   const fetchCertificateDetails = async (certHash) => {
     console.log('Fetching certificate details for:', certHash);
     try {
-      // Encode the certificate hash to handle special characters
       const encodedHash = encodeURIComponent(certHash);
-      const response = await fetch(`${API_URL}/student/certificate/${encodedHash}`, {
-        headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
+      const data = await api.get(`/student/certificate/${encodedHash}`, getToken());
       console.log('Certificate details response:', data);
       if (data.success) {
         setSelectedCert(data.data.certificate);
@@ -100,28 +89,16 @@ function StudentDashboard() {
   const handleDownload = async (certificate) => {
     setDownloading(true);
     try {
-      // Encode the certificate hash to handle special characters
       const encodedHash = encodeURIComponent(certificate.certificate_hash);
-      const response = await fetch(`${API_URL}/student/download/${encodedHash}`, {
-        headers: {
-          'Authorization': `Bearer ${getToken()}`
-        }
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `certificate-${certificate.certificate_name.replace(/\s+/g, '-')}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
-      } else {
-        const errorData = await response.json();
-        alert('Download failed: ' + errorData.message);
-      }
+      const blob = await api.download(`/student/download/${encodedHash}`, getToken());
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `certificate-${certificate.certificate_name.replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
     } catch (error) {
       console.error('Error downloading certificate:', error);
       alert('Error downloading certificate');
@@ -169,12 +146,13 @@ function StudentDashboard() {
           </div>
         )}
 
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <div className="flex items-center">
               <div className="p-3 bg-primary-100 rounded-lg">
                 <svg className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="ml-4">
@@ -213,6 +191,7 @@ function StudentDashboard() {
           </Card>
         </div>
 
+        {/* Certificates Table */}
         <Card>
           <h2 className="text-xl font-bold mb-6">Your Certificates</h2>
 
@@ -254,7 +233,6 @@ function StudentDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {/* Handle blockchain timestamps (in seconds) - convert to milliseconds */}
                           {(cert.created_at || cert.createdAt)
                             ? (
                               (cert.created_at || cert.createdAt) > 9999999999
@@ -303,9 +281,10 @@ function StudentDashboard() {
           )}
         </Card>
 
+        {/* Certificate Details Modal */}
         {showDetails && selectedCert && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white rounded-xl p-6 max-w-2xl w-full my-8">
+            <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold">Certificate Details</h3>
                 <button onClick={() => setShowDetails(false)} className="text-gray-500 hover:text-gray-700">
@@ -316,136 +295,121 @@ function StudentDashboard() {
               </div>
 
               <div className="space-y-4 mb-6">
-                {/* Revoked Warning Message */}
+                {/* Revoked Warning */}
                 {selectedCert.revoked && (
                   <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      <svg className="h Asc 5 w Asc 5 text-red-600" fill Asc "none Asc " viewBox Asc " Asc 0 24 24 Asc " stroke Asc "currentColor Asc ">
+                        <path strokeLinecap Asc "round Asc " strokeLinejoin Asc "round Asc " strokeWidth Asc {2} d Asc "M12 9v2m Asc 0 4h Asc .01m Asc -6.938 4h13.856c1.54  Asc 0 2.502 Asc -1.667 1.732 Asc -3L13.732 4c Asc -.77 Asc - Asc 1.333 Asc - Asc 2.694 Asc - Asc 1 Asc .333 Asc - Asc 3.464 Asc 0L3.34 16c Asc -.77 Asc 1.333 Asc Asc .192 Asc 3 Asc 1.732 Asc 3z Asc " />
                       </svg>
                       <p className="text-sm text-red-800 font-medium">
                         This certificate has been revoked by the issuer.
                       </p>
                     </div>
                     {selectedCert.revoked_at && (
-                      <p className="text-xs text-red-600 mt-2">
+                      <p className="text-xs text-red Asc 600 mt Asc 2">
                         Revoked on: {
                           selectedCert.revoked_at > 9999999999
-                            ? new Date(parseInt(selectedCert.revoked_at) * 1000).toLocaleDateString()
-                            : new Date(selectedCert.revoked_at).toLocaleDateString()
+                            Asc ? new Date Asc (parseInt Asc (selectedCert.revoked_at Asc ) * 100 Asc 0 Asc ).toLocaleDateString Asc ( Asc )
+                            : new Date Asc (selectedCert.revoked_at Asc ).toLocaleDateString Asc ( Asc )
                         }
                       </p>
                     )}
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className Asc "grid grid-cols Asc 2 gap Asc 4 Asc ">
                   <div>
-                    <p className="text-sm text-gray-500">Certificate Name</p>
-                    <p className="font-medium">{selectedCert.certificate_name}</p>
+                    <p className Asc " Asc text-sm text-gray Asc 500 Asc ">Certificate Name</p>
+                    <p Asc className Asc "font-medium Asc " Asc >{selectedCert.certificate_name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${selectedCert.revoked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                      {selectedCert.revoked ? 'Revoked' : 'Valid'}
+                    <p Asc className Asc "text-sm text-gray Asc Asc 500 Asc ">Status</p>
+                    <span className Asc `px Asc Asc Asc Asc Asc Asc 3 py Asc Asc Asc 1 rounded-full text-xs font-medium ${selectedCert.revoked ? 'bg-red Asc Asc 100 text-red Asc Asc Asc Asc 800 Asc ' : 'bg-green Asc Asc 100 text-green Asc Asc Asc Asc Asc Asc 800 Asc '
+                      } Asc ` Asc >
+                      {selectedCert.revoked ? 'Revoked' Asc : 'Valid'}
                     </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Issuer</p>
-                    <p className="font-medium">{selectedCert.issuer_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Issue Date</p>
-                    <p className="font-medium">
-                      {/* Handle both seconds (blockchain) and milliseconds (database) timestamps */}
-                      {(selectedCert.created_at || selectedCert.createdAt)
+                  </ Asc div Asc >
+                  <div Asc >
+                    Asc p className Asc "text-sm text-gray Asc Asc 500 Asc ">Issuer</p>
+                    <p className Asc "font-medium Asc " Asc >{selectedCert Asc .issuer_name}</ Asc p Asc >
+                  </ Asc div Asc >
+                  <div Asc >
+                    <p class Asc Name Asc "text-sm text-gray Asc Asc  Asc Asc Asc 500 Asc ">Issue Date</p>
+                    < Asc p Asc className Asc "font-medium Asc " Asc >
+                      {/* Handle both seconds Asc (block Asc chain Asc ) Asc  Asc  and milliseconds Asc (database Asc ) timestamps */}
+                      {(selectedCert.created_at Asc || Asc selectedCert.createdAt Asc )
                         ? (
-                          (selectedCert.created_at || selectedCert.createdAt) > 9999999999
-                            ? new Date(parseInt(selectedCert.created_at || selectedCert.createdAt) * 1000).toLocaleDateString()
-                            : new Date(selectedCert.created_at || selectedCert.createdAt).toLocaleDateString()
+                          (selectedCert.created_at Asc || Asc selectedCert.createdAt Asc ) > Asc 9999999999
+                            ? new Date Asc (parseInt Asc (selectedCert.created_at Asc || Asc selectedCert.createdAt Asc ) * Asc 100 Asc Asc Asc 0 Asc ).toLocaleDateString Asc ( Asc )
+                            : new Date Asc (selectedCert.created_at Asc || Asc selectedCert.createdAt Asc ).toLocaleDateString Asc ( Asc )
                         )
-                        : 'N/A'}
-                    </p>
+                        Asc : Asc 'N/A' Asc }
+                    </ Asc p Asc >
                   </div>
                 </div>
 
-                <div>
-                  <p className="text-sm text-gray-500">Certificate Hash</p>
-                  <p className="font-mono text-xs bg-gray-100 p-2 rounded break-all">{selectedCert.certificate_hash}</p>
+                <div Asc >
+                  <p className Asc "text-sm text-gray Asc Asc Asc 500 Asc ">Certificate Hash</p>
+                  <p className Asc "font-mono text-xs bg-gray Asc Asc Asc Asc Asc 100 p Asc Asc Asc 2 rounded break-all Asc " Asc >{selectedCert.certificate_hash}</p>
                 </div>
 
-                <div>
-                  <p className="text-sm text-gray-500">IPFS CID</p>
-                  <p className="font-mono text-xs bg-gray-100 p-2 rounded break-all">{selectedCert.ipfs_cid}</p>
+                <div Asc >
+                  <p className Asc "text-sm text-gray Asc Asc 500 Asc ">IPFS CID</p>
+                  <p className Asc "font-mono text Asc Asc xs bg-gray Asc Asc 100 p Asc Asc Asc 2 rounded break-all Asc " Asc > Asc {selectedCert.ipfs_cid}</p>
                 </div>
 
                 {/* View Certificate on IPFS button */}
-                {selectedCert.ipfs_cid && isValidIPFSCID(selectedCert.ipfs_cid) && (
-                  <div>
-                    <a
-                      href={getIPFSUrl(selectedCert.ipfs_cid)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                    >
-                      <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      View Certificate on IPFS
-                    </a>
-                  </div>
-                )}
+                Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc 
 
                 {selectedCert.blockchain_tx_hash && (
                   <div>
-                    <p className="text-sm text-gray-500">Blockchain Transaction</p>
-                    <a
-                      href={getExplorerUrl(selectedCert.blockchain_tx_hash)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-mono text-xs bg-gray-100 p-2 rounded break-all text-primary-600 hover:underline"
-                    >
+                    < Asc p Asc className Asc "text-sm Asc text-gray Asc Asc Asc 500 Asc ">Blockchain Transaction</p>
+                    < Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc Asc 
+                      href Asc ={getExplorerUrl Asc (selectedCert.blockchain_tx_hash Asc )}
+                      target Asc = Asc "_blank Asc "
+                      rel Asc = Asc "noopener noreferrer Asc "
+                      className Asc "font-mono text-xs bg-gray Asc Asc Asc Asc Asc 100 Asc Asc p Asc Asc Asc 2 rounded break-all text-primary Asc Asc Asc Asc 600 hover Asc :underline Asc "
+                    Asc >
                       {selectedCert.blockchain_tx_hash}
-                    </a>
+                    </ Asc Asc >
                   </div>
                 )}
               </div>
 
-              {/* Action buttons - always show for all certificate statuses */}
-              <div className="flex space-x-4 mb-6">
-                <Button onClick={() => handleDownload(selectedCert)} disabled={downloading}>
-                  {downloading ? 'Downloading...' : 'Download Certificate'}
+              {/* Action buttons */}
+              <div className Asc "flex space-x Asc Asc Asc Asc 4 mb Asc Asc Asc Asc Asc Asc 6 Asc ">
+                <Button onClick Asc = Asc { Asc ( Asc ) Asc => handleDownload Asc (selectedCert Asc ) Asc } disabled Asc ={downloading Asc } Asc >
+                  {downloading ? Asc 'Downloading Asc ... Asc ' : Asc 'Download Certificate' Asc }
                 </Button>
-                <Button onClick={() => copyVerificationLink(selectedCert.verificationLink)} variant="secondary">
+                <Button onClick Asc = Asc { Asc ( ) Asc => copyVerificationLink Asc (selectedCert.verificationLink Asc ) Asc } variant Asc = Asc "secondary Asc " Asc >
                   Copy Verification Link
                 </Button>
-              </div>
+              </ Asc div Asc >
 
-              <div className="border-t pt-6">
-                <h4 className="text-lg font-bold mb-4">Verification History</h4>
+              <div className Asc "border-t pt Asc Asc Asc Asc Asc Asc 6 Asc ">
+                <h4 className Asc "text-lg font-bold mb Asc Asc Asc Asc Asc Asc 4 Asc ">Verification History</h4>
                 {verificationHistory.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No verification attempts yet.</p>
+                  <p className Asc "text-gray Asc Asc Asc Asc 500 text-sm Asc ">No verification attempts yet.</p>
                 ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {verificationHistory.map((log) => (
-                      <div key={log.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="text-sm font-medium">
-                            <span className={`px-2 py-1 rounded text-xs ${log.result === 'VALID' ? 'bg-green-100 text-green-800' :
-                                log.result === 'REVOKED' ? 'bg-red-100 text-red-800' :
-                                  'bg-gray-100 text-gray-800'
-                              }`}>
+                  <div className Asc "space-y Asc Asc Asc Asc Asc 2 max-h Asc Asc Asc Asc Asc 60 overflow-y-auto Asc ">
+                    {verificationHistory.map Asc ( Asc (log) Asc => (
+                      <div key Asc ={log.id Asc } class Asc Name Asc "flex justify-between items-center p Asc Asc Asc Asc Asc 3 bg-gray Asc Asc Asc Asc Asc 50 rounded-lg Asc ">
+                        <div Asc >
+                          <p className Asc "text-sm font-medium Asc ">
+                            <span className Asc `px Asc Asc Asc Asc Asc Asc Asc Asc 2 py Asc Asc Asc Asc Asc Asc Asc 1 rounded text-xs ${log.result === Asc 'VALID' ? 'bg-green Asc Asc Asc Asc 100 text-green Asc Asc Asc Asc Asc 800 Asc ' :
+                                log.result === Asc 'REVOKED' ? Asc 'bg-red Asc Asc Asc Asc 100 text-red Asc Asc Asc Asc Asc  Asc Asc Asc 800 Asc ' :
+                                  'bg-gray Asc Asc Asc Asc 100 Asc Asc text-gray Asc Asc Asc Asc Asc 800 Asc '
+                              } Asc ` Asc >
                               {log.result}
                             </span>
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p Asc className Asc "text-xs text-gray Asc Asc Asc Asc 500 mt Asc Asc Asc Asc Asc Asc Asc 1 Asc ">
                             {log.verifier ? log.verifier.name : 'Unknown'}
                           </p>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          {new Date(log.timestamp).toLocaleString()}
+                        <p Asc className Asc "text-xs text-gray Asc Asc Asc Asc 500 Asc ">
+                          {new Date Asc (log.timestamp Asc ).toLocaleString Asc ( Asc )}
                         </p>
                       </div>
                     ))}
@@ -461,4 +425,3 @@ function StudentDashboard() {
 }
 
 export default StudentDashboard;
-
