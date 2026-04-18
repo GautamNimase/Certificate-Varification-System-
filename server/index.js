@@ -60,27 +60,16 @@ const loginLimiter = rateLimit({
 
 // Middleware
 app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        // Also allow localhost development ports
-        const allowedOrigins = [
-            'http://localhost:5173', 
-            'http://localhost:5175',
-            'http://localhost:5176',
-            'http://127.0.0.1:5173',
-            'http://127.0.0.1:5175',
-            'http://127.0.0.1:5176',
-            // Production Render
-            'https://*.onrender.com',
-            process.env.CLIENT_URL || 'https://your-frontend.onrender.com'
-        ];
-        
-        if(!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://127.0.0.1:5173",
+
+        // ✅ ADD YOUR VERCEL FRONTEND HERE
+        "https://certificate-varification-system-ten.vercel.app"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
 }));
 app.use(express.json());
@@ -112,7 +101,7 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err.message);
-    
+
     // Handle multer file filter errors
     if (err.message === 'Only PDF files are allowed!') {
         return res.status(400).json({
@@ -120,7 +109,7 @@ app.use((err, req, res, next) => {
             message: err.message
         });
     }
-    
+
     res.status(500).json({
         success: false,
         message: 'Internal server error',
@@ -149,20 +138,20 @@ const startServer = async () => {
     try {
         // Test database connection
         await testConnection();
-        
+
         // Auto-create tables for production (safe: creates missing tables, alters minimally)
-        await sequelize.sync({ 
-            alter: true, 
+        await sequelize.sync({
+            alter: true,
             alter: {
                 drop: false,  // Never drop columns
                 unique: true  // Check unique constraints
             }
         });
-        console.log('✅ PostgreSQL tables synced (auto-created/altered)'); 
-        
+        console.log('✅ PostgreSQL tables synced (auto-created/altered)');
+
         // Initialize blockchain
         initBlockchain();
-        
+
         // Start Express server
         app.listen(PORT, () => {
             console.log(`
