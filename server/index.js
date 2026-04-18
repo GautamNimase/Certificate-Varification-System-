@@ -68,7 +68,10 @@ app.use(cors({
             'http://localhost:5176',
             'http://127.0.0.1:5173',
             'http://127.0.0.1:5175',
-            'http://127.0.0.1:5176'
+            'http://127.0.0.1:5176',
+            // Production Render
+            'https://*.onrender.com',
+            process.env.CLIENT_URL || 'https://your-frontend.onrender.com'
         ];
         
         if(!origin || allowedOrigins.includes(origin)) {
@@ -146,9 +149,15 @@ const startServer = async () => {
         // Test database connection
         await testConnection();
         
-        // Sync database models - only create if tables don't exist (no alter to avoid index issues)
-        await sequelize.sync({ alter: false });
-        console.log('✅ Database models synchronized');
+        // Auto-create tables for production (safe: creates missing tables, alters minimally)
+        await sequelize.sync({ 
+            alter: true, 
+            alter: {
+                drop: false,  // Never drop columns
+                unique: true  // Check unique constraints
+            }
+        });
+        console.log('✅ PostgreSQL tables synced (auto-created/altered)'); 
         
         // Initialize blockchain
         initBlockchain();
