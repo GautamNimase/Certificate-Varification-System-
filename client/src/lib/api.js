@@ -9,8 +9,18 @@ if (!API_BASE_URL) {
 console.log('[API] Using base URL:', API_BASE_URL);
 
 export const api = {
-  get: async (endpoint) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`);
+  get: async (endpoint, token = null) => {
+    const headers = {};
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
+      headers
+    });
+
     return response.json();
   },
 
