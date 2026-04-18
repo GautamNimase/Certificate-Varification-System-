@@ -158,7 +158,6 @@ const AuthPage = () => {
                   loading={loading}
                   error={error}
                   setError={setError}
-                  API_URL="http://localhost:5000/api"
                 />
               </motion.div>
             )}

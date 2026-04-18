@@ -14,7 +14,8 @@ import RoleSelector from './RoleSelector';
  * - Animated error messages
  * - Loading state with spinner
  */
-const RegisterForm = ({ onSubmit, loading, error, setError, API_URL }) => {
+
+const RegisterForm = ({ onSubmit, loading, error, setError }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -77,19 +78,13 @@ const RegisterForm = ({ onSubmit, loading, error, setError, API_URL }) => {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const data = await api.post('/auth/register', {
           name: formData.fullName,
           email: formData.email,
           password: formData.password,
           role: formData.role,
           universityId: formData.role === 'student' ? formData.universityId : undefined
-        }),
-      });
+        });
 
       const data = await response.json();
 

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000/api';
-
 function VerifierLogin() {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
@@ -28,15 +26,7 @@ function VerifierLogin() {
 
     try {
       const endpoint = isLogin ? '/verifier/login' : '/verifier/register';
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
+      const data = await api.post(endpoint, formData);
 
       if (data.success) {
         // Store token and user info (use same keys as App.jsx expects)

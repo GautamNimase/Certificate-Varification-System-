@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
+import api from '../lib/api.js';
 
 // Reusable components
 const Card = ({ children, className = "" }) => (
@@ -104,20 +105,12 @@ function StudentLogin() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/student/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const data = await api.post('/student/register', {
           name,
           email,
           password,
           wallet_address: walletAddress
-        })
-      });
-
-      const data = await response.json();
+        });
 
       if (data.success) {
         // Auto login after registration

@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000/api';
-
 // Helper function to format date in DD MMM YYYY format
 const formatDate = (dateValue) => {
   // Handle null/undefined
@@ -106,15 +104,7 @@ function VerifyCertificate() {
     setVerificationResult(null);
 
     try {
-      const response = await fetch(`${API_URL}/certificate/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ certificateHash: hash })
-      });
-
-      const data = await response.json();
+      const data = await api.post('/certificate/verify', { certificateHash: hash });
       
       if (data.success) {
         setVerificationResult(data);
@@ -144,13 +134,7 @@ function VerifyCertificate() {
     formData.append('certificate', selectedFile);
 
     try {
-      const response = await fetch(`${API_URL}/certificate/verify`, {
-        method: 'POST',
-        headers: {},
-        body: formData
-      });
-
-      const data = await response.json();
+      const data = await api.upload('/certificate/verify', formData);
       
       if (data.success) {
         setVerificationResult(data);
