@@ -1,3 +1,4 @@
+console.log("ENV CHECK → DATABASE_URL:", process.env.DATABASE_URL);
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
