@@ -3,44 +3,16 @@ import { AuthContext } from '../App';
 
 // Helper function to format date in DD MMM YYYY format
 const formatDate = (dateValue) => {
-  // Handle null/undefined
-  if (!dateValue || dateValue === 0 || dateValue === '0') return 'N/A';
+  if (!dateValue) return 'N/A';
 
-  let date;
+  const date = new Date(dateValue);
 
-  // If it's a number, treat as Unix timestamp (seconds or milliseconds)
-  if (typeof dateValue === 'number') {
-    // Check if it's seconds (10 digits) or milliseconds (13 digits)
-    const timestamp = dateValue < 10000000000 ? dateValue * 1000 : dateValue;
-    date = new Date(timestamp);
-  }
-  // If it's a string
-  else if (typeof dateValue === 'string') {
-    // Try parsing as number first
-    const num = parseInt(dateValue);
-    if (!isNaN(num)) {
-      const timestamp = num < 10000000000 ? num * 1000 : num;
-      date = new Date(timestamp);
-    } else {
-      // Try parsing as date string
-      date = new Date(dateValue);
-    }
-  }
-  // If it's already a Date object
-  else if (dateValue instanceof Date) {
-    date = dateValue;
-  }
+  if (isNaN(date.getTime())) return 'N/A';
 
-  // Check if date is valid
-  if (!date || isNaN(date.getTime())) return 'N/A';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  // Format as DD MMM YYYY
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const day = date.getDate();
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-
-  return `${day} ${month} ${year}`;
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 };
 
 // Reusable components
@@ -244,11 +216,7 @@ const VerificationResultCard = ({ result, onClose }) => {
               <span className="text-gray-500 block">Issue Date</span>
               <span className="font-medium">
                 {
-                  formatDate(
-                    result.certificate.issueDate ||
-                    result.certificate.created_at ||
-                    result.certificate.createdAt
-                  )
+                  formatDate(result.certificate.issueDate)
                 }
               </span>
             </div>
@@ -381,7 +349,7 @@ const HistoryTable = ({ history }) => {
 function VerifierDashboard() {
   const { user, logout, getToken } = useContext(AuthContext);
   const API_URL = import.meta.env.VITE_API_URL;
-  
+
   const [certificateHash, setCertificateHash] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
