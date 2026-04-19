@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import api from '../lib/api';
 
 // Helper function to format date in DD MMM YYYY format
 const formatDate = (dateValue) => {
   // Handle null/undefined
   if (!dateValue) return 'N/A';
-  
+
   let date;
-  
+
   // If it's a number, treat as Unix timestamp (seconds or milliseconds)
   if (typeof dateValue === 'number') {
     // Check if it's seconds (10 digits) or milliseconds (13 digits)
     const timestamp = dateValue < 10000000000 ? dateValue * 1000 : dateValue;
     date = new Date(timestamp);
-  } 
+  }
   // If it's a string
   else if (typeof dateValue === 'string') {
     // Try parsing as number first
@@ -30,16 +31,16 @@ const formatDate = (dateValue) => {
   else if (dateValue instanceof Date) {
     date = dateValue;
   }
-  
+
   // Check if date is valid
   if (!date || isNaN(date.getTime())) return 'N/A';
-  
+
   // Format as DD MMM YYYY
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const day = date.getDate();
   const month = months[date.getMonth()];
   const year = date.getFullYear();
-  
+
   return `${day} ${month} ${year}`;
 };
 
@@ -51,7 +52,7 @@ const Card = ({ children, className = "" }) => (
 function VerifyCertificate() {
   const [searchParams] = useSearchParams();
   const certificateHash = searchParams.get('hash');
-  
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [inputHash, setInputHash] = useState(certificateHash || '');
   const [verificationResult, setVerificationResult] = useState(null);
@@ -99,28 +100,28 @@ function VerifyCertificate() {
   };
 
   const handleVerify = async (hash) => {
-    setLoading(true);
-    setError('');
-    setVerificationResult(null);
+  setLoading(true);
+  setError('');
+  setVerificationResult(null);
 
-    try {
-      const data = await api.post('/certificate/verify', { certificateHash: hash });
-      
-      if (data.success) {
-        setVerificationResult(data);
-      } else {
-        setError(data.message || 'Verification failed');
-      }
-    } catch (err) {
-      setError('Error verifying certificate. Please try again.');
+  try {
+    const data = await api.post('/api/certificate/verify', { hash });
+
+    if (data.success) {
+      setVerificationResult(data);
+    } else {
+      setError(data.message || 'Verification failed');
     }
+  } catch (err) {
+    console.error(err);
+    setError('Error verifying certificate. Please try again.');
+  }
 
-    setLoading(false);
-  };
-
+  setLoading(false);
+};
   const handleVerifyByFile = async (e) => {
     e.preventDefault();
-    
+
     if (!selectedFile) {
       setError('Please select a certificate file');
       return;
@@ -135,7 +136,7 @@ function VerifyCertificate() {
 
     try {
       const data = await api.upload('/certificate/verify', formData);
-      
+
       if (data.success) {
         setVerificationResult(data);
       } else {
@@ -188,7 +189,7 @@ function VerifyCertificate() {
         {/* Verification Form */}
         <Card>
           <h2 className="text-xl font-bold mb-6">Verify Certificate</h2>
-          
+
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
@@ -276,9 +277,9 @@ function VerifyCertificate() {
             <div className="text-center mb-6">
               {getResultIcon(verificationResult.result)}
               <h3 className={`mt-4 text-2xl font-bold ${verificationResult.result === 'VALID' ? 'text-green-600' : verificationResult.result === 'REVOKED' ? 'text-red-600' : 'text-gray-600'}`}>
-                {verificationResult.result === 'VALID' ? '✓ Certificate is Valid' : 
-                 verificationResult.result === 'REVOKED' ? '✗ Certificate has been Revoked' : 
-                 '? Certificate Not Found'}
+                {verificationResult.result === 'VALID' ? '✓ Certificate is Valid' :
+                  verificationResult.result === 'REVOKED' ? '✗ Certificate has been Revoked' :
+                    '? Certificate Not Found'}
               </h3>
               <p className="text-gray-500 mt-2">{verificationResult.message}</p>
             </div>
@@ -320,7 +321,7 @@ function VerifyCertificate() {
                   )}
                   {verificationResult.result === 'VALID' && isValidIPFSCID(verificationResult.certificate.ipfsCID || verificationResult.certificate.ipfs_cid) && (
                     <div className="col-span-2 mt-2">
-                      <a 
+                      <a
                         href={getIPFSUrl(verificationResult.certificate.ipfsCID || verificationResult.certificate.ipfs_cid)}
                         target="_blank"
                         rel="noopener noreferrer"
