@@ -1,6 +1,8 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../App';
 
+const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+
 const Card = ({ children, className = "" }) => (
   <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>{children}</div>
 );
@@ -262,7 +264,10 @@ function StudentDashboard() {
                             {downloading ? 'Downloading...' : 'Download'}
                           </Button>
                           <Button
-                            onClick={() => copyVerificationLink(cert.verificationLink)}
+                            onClick={() => {
+                              const link = `${APP_URL}/verify?hash=${cert.certificate_hash}`;
+                              copyVerificationLink(link);
+                            }}
                             className="text-xs px-3 py-1"
                           >
                             Share
@@ -375,7 +380,13 @@ function StudentDashboard() {
                 <Button onClick={() => handleDownload(selectedCert)} disabled={downloading}>
                   {downloading ? 'Downloading...' : 'Download Certificate'}
                 </Button>
-                <Button onClick={() => copyVerificationLink(selectedCert.verificationLink)} variant="secondary">
+                <Button
+                  onClick={() => {
+                    const link = `${APP_URL}/verify?hash=${selectedCert.certificate_hash}`;
+                    copyVerificationLink(link);
+                  }}
+                  variant="secondary"
+                >
                   Copy Verification Link
                 </Button>
               </div>
@@ -390,11 +401,10 @@ function StudentDashboard() {
                       <div key={log.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="text-sm font-medium">
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              log.result === 'VALID' ? 'bg-green-100 text-green-800' :
+                            <span className={`px-2 py-1 rounded text-xs ${log.result === 'VALID' ? 'bg-green-100 text-green-800' :
                               log.result === 'REVOKED' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                                'bg-gray-100 text-gray-800'
+                              }`}>
                               {log.result}
                             </span>
                           </p>
