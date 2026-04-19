@@ -76,7 +76,26 @@ function VerifyCertificate() {
 
   useEffect(() => {
     if (certificateHash) {
-      handleVerify(certificateHash);
+      const handleVerify = async (hash) => {
+        setLoading(true);
+        setError('');
+        setVerificationResult(null);
+
+        try {
+          const data = await api.get(`/api/verify/public/${hash}`);
+
+          if (data.success) {
+            setVerificationResult(data);
+          } else {
+            setError(data.message || 'Verification failed');
+          }
+        } catch (err) {
+          console.error(err);
+          setError('Error verifying certificate. Please try again.');
+        }
+
+        setLoading(false);
+      };
     }
   }, [certificateHash]);
 
@@ -100,25 +119,25 @@ function VerifyCertificate() {
   };
 
   const handleVerify = async (hash) => {
-  setLoading(true);
-  setError('');
-  setVerificationResult(null);
+    setLoading(true);
+    setError('');
+    setVerificationResult(null);
 
-  try {
-    const data = await api.post('/api/certificate/verify', { hash });
+    try {
+      const data = await api.post('/api/verify/by-hash', { certificateHash: hash });
 
-    if (data.success) {
-      setVerificationResult(data);
-    } else {
-      setError(data.message || 'Verification failed');
+      if (data.success) {
+        setVerificationResult(data);
+      } else {
+        setError(data.message || 'Verification failed');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Error verifying certificate. Please try again.');
     }
-  } catch (err) {
-    console.error(err);
-    setError('Error verifying certificate. Please try again.');
-  }
 
-  setLoading(false);
-};
+    setLoading(false);
+  };
   const handleVerifyByFile = async (e) => {
     e.preventDefault();
 
