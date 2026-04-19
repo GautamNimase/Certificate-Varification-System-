@@ -41,10 +41,10 @@ const uploadToIPFS = async (fileBuffer, fileName) => {
         }
 
         const formData = new (require('form-data'))();
-        
+
         // Create a buffer from the file
         const buffer = Buffer.from(fileBuffer);
-        
+
         // Append file to form data
         formData.append('file', buffer, {
             filename: fileName,
@@ -84,7 +84,7 @@ const uploadToIPFS = async (fileBuffer, fileName) => {
             const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
             return 'Qm' + hash.substring(0, 44);
         }
-        
+
         console.error('IPFS Upload Error:', error.message);
         throw new Error(`Failed to upload to IPFS: ${error.message}`);
     }
@@ -105,7 +105,7 @@ const uploadJSONToIPFS = async (metadata) => {
         }
 
         const authHeaders = getPinataHeaders();
-        
+
         const response = await pinataClient.post('/pinning/pinJSONToIPFS', {
             pinataContent: metadata,
             pinataMetadata: {
@@ -128,7 +128,7 @@ const uploadJSONToIPFS = async (metadata) => {
             const hash = crypto.createHash('sha256').update(JSON.stringify(metadata)).digest('hex');
             return 'Qm' + hash.substring(0, 44);
         }
-        
+
         console.error('IPFS JSON Upload Error:', error.message);
         throw new Error(`Failed to upload JSON to IPFS: ${error.message}`);
     }
@@ -141,8 +141,34 @@ const uploadJSONToIPFS = async (metadata) => {
  */
 const getFromIPFS = async (cid) => {
     try {
-        const response = await axios.get(`https://gateway.pinata.cloud/ipfs/${cid}`);
-        return response.data;
+        const getFromIPFS = async (cid) => {
+            try {
+                const url = `https://ipfs.io/ipfs/${cid}`; // more reliable
+
+                const response = await axios.get(url, {
+                    responseType: 'arraybuffer',   // 🔥 IMPORTANT FIX
+                    timeout: 10000
+                });
+
+                return response.data;
+            } catch (error) {
+                console.error('IPFS Get Error:', error.message);
+
+                // fallback gateway (important)
+                try {
+                    const fallbackUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+
+                    const fallbackResponse = await axios.get(fallbackUrl, {
+                        responseType: 'arraybuffer',
+                        timeout: 10000
+                    });
+
+                    return fallbackResponse.data;
+                } catch (fallbackError) {
+                    throw new Error(`IPFS fetch failed: ${fallbackError.message}`);
+                }
+            }
+        };
     } catch (error) {
         console.error('IPFS Get Error:', error.message);
         throw new Error(`Failed to get from IPFS: ${error.message}`);
