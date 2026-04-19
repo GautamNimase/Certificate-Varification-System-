@@ -139,7 +139,8 @@ exports.issueCertificate = async (req, res) => {
             certificate_name: certificateName,
             certificate_description: certificateDescription || '',
             file_path: req.file.path,
-            revoked: false
+            revoked: false,
+            issue_date: new Date()
         });
 
         // Generate QR code for verification link
@@ -383,7 +384,7 @@ exports.verifyCertificate = async (req, res) => {
                     email: certificate.student.email
                 } : null,
                 issuerName: certificate.issuer_name,
-                issueDate: certificate.createdAt,
+                issueDate: certificate.issue_date,
                 revoked: certificate.revoked,
                 revokedAt: certificate.revoked_at
             } : null,

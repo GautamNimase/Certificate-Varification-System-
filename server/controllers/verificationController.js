@@ -108,7 +108,7 @@ exports.verifyByHash = async (req, res) => {
                 } : null,
                 issuerName: certificate.issuer_name,
                 issuerWallet: certificate.issuer_wallet_address,
-                issueDate: certificate.createdAt && new Date(certificate.createdAt).getTime() > 0
+                issueDate: certificate.issue_date && new Date(certificate.createdAt).getTime() > 0
                     ? certificate.createdAt
                     : null, revoked: certificate.revoked,
                 revokedAt: certificate.revoked_at,
@@ -227,7 +227,7 @@ exports.verifyByUpload = async (req, res) => {
                 } : null,
                 issuerName: certificate.issuer_name,
                 issuerWallet: certificate.issuer_wallet_address,
-                issueDate: certificate.createdAt?.toISOString(), 
+                issueDate: certificate.issue_date?.toISOString(), 
                     revoked: certificate.revoked,
                 revokedAt: certificate.revoked_at,
                 blockchainTxHash: certificate.blockchain_tx_hash
@@ -337,7 +337,7 @@ exports.getPublicVerification = async (req, res) => {
                     name: certificate.student.name
                 } : null,
                 issuerName: certificate.issuer_name,
-                issueDate: certificate.createdAt && new Date(certificate.createdAt).getTime() > 0
+                issueDate: certificate.issue_date && new Date(certificate.createdAt).getTime() > 0
                     ? certificate.createdAt
                     : null,
                 revoked: certificate.revoked

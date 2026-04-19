@@ -142,10 +142,9 @@ const startServer = async () => {
 
         // Auto-create tables for production (safe: creates missing tables, alters minimally)
         await sequelize.sync({
-            alter: true,
+            
             alter: {
-                drop: false,  // Never drop columns
-                unique: true  // Check unique constraints
+                drop: false  // Never drop columns
             }
         });
         console.log('✅ PostgreSQL tables synced (auto-created/altered)');

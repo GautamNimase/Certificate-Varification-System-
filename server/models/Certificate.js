@@ -64,6 +64,11 @@ const Certificate = sequelize.define('certificates', {
         type: DataTypes.TEXT,
         allowNull: true
     },
+    issue_date: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
+    },
     file_path: {
         type: DataTypes.STRING(500),
         allowNull: true
@@ -94,12 +99,12 @@ const Certificate = sequelize.define('certificates', {
 });
 
 // Method to check if certificate is valid (not revoked)
-Certificate.prototype.isValid = function() {
+Certificate.prototype.isValid = function () {
     return !this.revoked;
 };
 
 // Method to mark certificate as revoked
-Certificate.prototype.markAsRevoked = async function() {
+Certificate.prototype.markAsRevoked = async function () {
     this.revoked = true;
     this.revoked_at = new Date();
     return await this.save();
