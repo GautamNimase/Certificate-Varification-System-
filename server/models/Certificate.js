@@ -66,7 +66,7 @@ const Certificate = sequelize.define('certificates', {
     },
     issue_date: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
         defaultValue: DataTypes.NOW
     },
     file_path: {
